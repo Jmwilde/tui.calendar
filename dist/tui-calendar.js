@@ -1,6 +1,6 @@
 /*!
  * TOAST UI Calendar
- * @version 1.2.0-alpha | Fri May 11 2018
+ * @version 1.2.0-alpha | Mon May 14 2018
  * @author NHNEnt FE Development Lab <dl_javascript@nhnent.com>
  * @license MIT
  */
@@ -2938,6 +2938,26 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var unit = cssValue.match(/[\d.\-+]*\s*(.*)/)[1] || '';
 	
 	        return [number, unit];
+	    },
+	
+	    find: function(array, iteratee, contextopt) {
+	        var found;
+	
+	        util.forEach(array, function(item) {
+	            if (iteratee) {
+	                found = iteratee(item);
+	            }
+	
+	            if (found) {
+	                found = item;
+	
+	                return false;
+	            }
+	
+	            return true;
+	        }, contextopt);
+	
+	        return found;
 	    }
 	};
 	
@@ -9477,6 +9497,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var util = __webpack_require__(1);
 	var config = __webpack_require__(34);
 	var domutil = __webpack_require__(31);
+	var common = __webpack_require__(30);
 	var VLayout = __webpack_require__(53);
 	var reqAnimFrame = __webpack_require__(55);
 	var Schedule = __webpack_require__(41);
@@ -9711,7 +9732,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        detailView = new ScheduleDetailPopup(layoutContainer, baseController.calendars);
 	        onShowDetailPopup = function(eventData) {
 	            var scheduleId = eventData.schedule.calendarId;
-	            eventData.calendar = baseController.calendars.find(function(calendar) {
+	            eventData.calendar = common.find(baseController.calendars, function(calendar) {
 	                return calendar.id === scheduleId;
 	            });
 	
@@ -11140,15 +11161,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 	
 	DayGrid.prototype._expand = function() {
-	    var vPanel = this.vPanel;
-	    var opt = this.options;
-	    var panel = getPanel(opt.panels, opt.viewName);
-	
-	    vPanel.setMaxHeight(panel.maxExpandableHeight);
-	    vPanel.setHeightForcedSet(false);
-	    vPanel.setHeight(null, panel.maxExpandableHeight);
-	
 	    reqAnimFrame.requestAnimFrame(function() {
+	        var vPanel = this.vPanel;
+	        var opt = this.options;
+	        var panel = getPanel(opt.panels, opt.viewName);
+	
+	        vPanel.setMaxHeight(panel.maxExpandableHeight);
+	        vPanel.setHeightForcedSet(false);
+	        vPanel.setHeight(null, panel.maxExpandableHeight);
+	
 	        if (this.parent) {
 	            this.parent.render();
 	        }
@@ -11156,15 +11177,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 	
 	DayGrid.prototype._collapse = function() {
-	    var vPanel = this.vPanel;
-	    var opt = this.options;
-	    var panel = getPanel(opt.panels, opt.viewName);
-	
-	    vPanel.setMaxHeight(panel.maxHeight);
-	    vPanel.setHeightForcedSet(false);
-	    vPanel.setHeight(null, panel.minHeight);
-	
 	    reqAnimFrame.requestAnimFrame(function() {
+	        var vPanel = this.vPanel;
+	        var opt = this.options;
+	        var panel = getPanel(opt.panels, opt.viewName);
+	
+	        vPanel.setMaxHeight(panel.maxHeight);
+	        vPanel.setHeightForcedSet(false);
+	        vPanel.setHeight(null, panel.minHeight);
+	
 	        if (this.parent) {
 	            this.parent.render();
 	        }
@@ -11176,7 +11197,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * @param {object} state - state
 	 */
 	DayGrid.prototype.setState = function(state) {
+	    var collapsed = this.state.collapsed;
 	    View.prototype.setState.call(this, state);
+	
+	    if (this.state.collapsed === collapsed) {
+	        return;
+	    }
 	
 	    if (this.state.collapsed) {
 	        this._collapse();
@@ -13510,7 +13536,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	var TZDate = __webpack_require__(28).Date;
 	var config = __webpack_require__(34),
 	    domevent = __webpack_require__(32),
-	    domutil = __webpack_require__(31);
+	    domutil = __webpack_require__(31),
+	    common = __webpack_require__(30);
 	var tmpl = __webpack_require__(74);
 	var MAX_WEEK_OF_MONTH = 6;
 	var ARROW_WIDTH_HALF = 8;
@@ -13677,7 +13704,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	    if (domutil.hasClass(dropdown, config.classname('section-calendar'))) {
 	        domutil.find('.' + iconClassName, dropdownBtn).style.backgroundColor = bgColor;
-	        this._selectedCal = this.calendars.find(function(cal) {
+	        this._selectedCal = common.find(this.calendars, function(cal) {
 	            return cal.id === domutil.getData(selectedItem, 'calendarId');
 	        });
 	    }
@@ -18953,6 +18980,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    array = __webpack_require__(50),
 	    datetime = __webpack_require__(27),
 	    domutil = __webpack_require__(31),
+	    common = __webpack_require__(30),
 	    Month = __webpack_require__(96),
 	    MonthClick = __webpack_require__(101),
 	    MonthCreation = __webpack_require__(102),
@@ -19055,7 +19083,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        detailView = new ScheduleDetailPopup(layoutContainer, baseController.calendars);
 	        onShowDetailPopup = function(eventData) {
 	            var scheduleId = eventData.schedule.calendarId;
-	            eventData.calendar = baseController.calendars.find(function(calendar) {
+	            eventData.calendar = common.find(baseController.calendars, function(calendar) {
 	                return calendar.id === scheduleId;
 	            });
 	
