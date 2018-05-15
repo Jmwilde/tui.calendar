@@ -1,6 +1,6 @@
 /*!
  * TOAST UI Calendar
- * @version 1.2.0-alpha | Mon May 14 2018
+ * @version 1.2.0-alpha | Tue May 15 2018
  * @author NHNEnt FE Development Lab <dl_javascript@nhnent.com>
  * @license MIT
  */
@@ -5594,11 +5594,34 @@ return /******/ (function(modules) { // webpackBootstrap
 	     * @type {object}
 	     * @property {Schedule} schedule - schedule instance to delete
 	     * @example
-	     * calendar.on('beforeDeleteSchedule', function() {
-	     *     alert('The schedule is removed.');
+	     * calendar.on('beforeDeleteSchedule', function(event) {
+	     *     var schedule = event.schedule;
+	     *     alert('The schedule is removed.', schedle);
 	     * });
 	     */
 	    this.fire('beforeDeleteSchedule', deleteScheduleData);
+	};
+	
+	/**
+	 * @fires Calendar#afterRenderSchedule
+	 * @param {Schedule} scheduleData - schedule data
+	 * @private
+	 */
+	Calendar.prototype._onAfterRenderSchedule = function(scheduleData) {
+	    /**
+	     * Fire this event by every single schedule after rendering whole calendar.
+	     * @event Calendar#afterRenderSchedule
+	     * @type {object}
+	     * @property {Schedule} schedule - a rendered schedule instance 
+	     * @example
+	     * calendar.on('afterRenderSchedule', function(event) {
+	     *     var schedule = event.schedule;
+	     *     var element = calendar.getElement(schedule.id, schedule.calendarId);
+	     *     // use the element
+	     *     console.log(element);
+	     * });
+	     */
+	    this.fire('afterRenderSchedule', scheduleData);
 	};
 	
 	/**
@@ -5632,6 +5655,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    util.forEach(handler.resize, function(resizeHandler) {
 	        resizeHandler[method]('beforeUpdateSchedule', self._onBeforeUpdate, self);
 	    });
+	
+	    // bypass events from view
+	    view[method]('afterRenderSchedule', self._onAfterRenderSchedule, self);
 	};
 	
 	/**
@@ -10647,7 +10673,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * @override
 	 */
 	Week.prototype.render = function() {
-	    var options = this.options,
+	    var self = this,
+	        options = this.options,
 	        scheduleFilter = options.scheduleFilter,
 	        narrowWeekend = options.narrowWeekend,
 	        startDayOfWeek = options.startDayOfWeek,
@@ -10697,13 +10724,48 @@ return /******/ (function(modules) { // webpackBootstrap
 	    };
 	
 	    this.children.each(function(childView) {
+	        var matrices;
+	        var viewName = util.pick(childView.options, 'viewName');
 	        childView.render(viewModel);
+	
+	        if (viewName) {
+	            matrices = viewModel.schedulesInDateRange[viewName]; // DayGrid limits schedule count by visibleScheduleCount after rendering it.
+	
+	            if (util.isArray(matrices)) {
+	                self._invokeAfterRenderSchedule(matrices);
+	            } else {
+	                util.forEach(matrices, function(matricesOfDay) {
+	                    self._invokeAfterRenderSchedule(matricesOfDay);
+	                });
+	            }
+	        }
 	    });
 	
 	    /**
 	     * @event Week#afterRender
 	     */
 	    this.fire('afterRender');
+	};
+	
+	/**
+	 * Fire 'afterRenderSchedule' event
+	 * @param {Array} matrices - schedule matrices from view model
+	 * @fires Week#afterRenderSchedule
+	 */
+	Week.prototype._invokeAfterRenderSchedule = function(matrices) {
+	    var self = this;
+	    util.forEachArray(matrices, function(matrix) {
+	        util.forEachArray(matrix, function(column) {
+	            util.forEachArray(column, function(scheduleViewModel) {
+	                if (scheduleViewModel) {
+	                    /**
+	                     * @event Week#afterRenderSchedule
+	                     */
+	                    self.fire('afterRenderSchedule', {schedule: scheduleViewModel.model});
+	                }
+	            });
+	        });
+	    });
 	};
 	
 	/**********
@@ -19063,6 +19125,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	        if (schedules && schedules.length) {
 	            moreView.render(getViewModelForMoreLayer(date, target, schedules));
+	
+	            schedules.each(function(scheduleViewModel) {
+	                if (scheduleViewModel) {
+	                    /**
+	                     * @event More#afterRenderSchedule
+	                     */
+	                    monthView.fire('afterRenderSchedule', {schedule: scheduleViewModel.model});
+	                }
+	            });
 	        }
 	    });
 	
@@ -19382,7 +19453,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * @override
 	 */
 	Month.prototype.render = function() {
-	    var opt = this.options,
+	    var self = this,
+	        opt = this.options,
 	        vLayout = this.vLayout,
 	        controller = this.controller,
 	        daynames = opt.daynames,
@@ -19460,6 +19532,29 @@ return /******/ (function(modules) { // webpackBootstrap
 	        };
 	
 	        childView.render(viewModel);
+	
+	        self._invokeAfterRenderSchedule(eventsInDateRange);
+	    });
+	};
+	
+	/**
+	 * Fire 'afterRenderSchedule' event
+	 * @param {Array} matrices - schedule matrices from view model
+	 * @fires Month#afterRenderSchedule
+	 */
+	Month.prototype._invokeAfterRenderSchedule = function(matrices) {
+	    var self = this;
+	    util.forEachArray(matrices, function(matrix) {
+	        util.forEachArray(matrix, function(column) {
+	            util.forEachArray(column, function(scheduleViewModel) {
+	                if (scheduleViewModel) {
+	                    /**
+	                     * @event Month#afterRenderSchedule
+	                     */
+	                    self.fire('afterRenderSchedule', {schedule: scheduleViewModel.model});
+	                }
+	            });
+	        });
 	    });
 	};
 	
